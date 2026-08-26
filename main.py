@@ -1,12 +1,17 @@
-import os
-import json
+import random
 from fastapi import FastAPI
-from openai import OpenAI
 
 app = FastAPI()
 
-# تهيئة وكيل الذكاء الاصطناعي
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# قائمة منتجات ترند ذكية للتجربة والمحاكاة
+TRENDING_PRODUCTS = [
+    {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
+    {"title": "Ultrasonic Mini Air Humidifier", "budget": 25, "margin": 60},
+    {"title": "Magnetic Wireless Power Bank 10k", "budget": 45, "margin": 50},
+    {"title": "Smart RGB LED Light Strip 10m", "budget": 30, "margin": 65},
+    {"title": "Automatic Pet Water Fountain Filter", "budget": 40, "margin": 52},
+    {"title": "Portable Neck Cooling Fan", "budget": 28, "margin": 58}
+]
 
 @app.get("/")
 def home():
@@ -14,37 +19,6 @@ def home():
 
 @app.get("/get_approvals")
 def get_approvals():
-    try:
-        prompt = """
-        You are an e-commerce product discovery agent. 
-        Generate a trending dropshipping product suggestion.
-        Return ONLY a raw JSON object (no markdown formatting) with these exact keys:
-        {
-          "title": "Product Title",
-          "budget": 40,
-          "margin": 52
-        }
-        """
-        
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.7
-        )
-        
-        content = response.choices[0].message.content.strip()
-        data = json.loads(content)
-        
-        return {
-            "title": data.get("title", "Wireless Charging Station"),
-            "budget": data.get("budget", 40),
-            "margin": data.get("margin", 52)
-        }
-    except Exception as e:
-        # في حال وجود أي خطأ في مفتاح الذكاء الاصطناعي أو الرصيد، سيعود السيرفر بهذه البيانات الاحتياطية
-        return {
-            "title": "Smart LED Desk Lamp (AI Backup)",
-            "budget": 45,
-            "margin": 50,
-            "error_details": str(e)
-        }
+    # يختار منتجاً عشوائياً ممتازاً في كل مرة يتم فيها طلب الـ API
+    selected_product = random.choice(TRENDING_PRODUCTS)
+    return selected_product
