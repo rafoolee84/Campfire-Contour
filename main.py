@@ -2,8 +2,12 @@ import os
 import random
 from fastapi import FastAPI
 from pydantic import BaseModel
+from openai import OpenAI
 
 app = FastAPI()
+
+# إعداد وكيل الذكاء الاصطناعي باستعمال المفتاح المسجل في Render
+client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 TRENDING_PRODUCTS = [
     {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
@@ -27,9 +31,18 @@ def get_approvals():
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    # استقبال الموافقة وتشغيل وكيل التسويق للمنتج
+    # وكيل الذكاء الاصطناعي يقوم بكتابة نص إعلاني تسويقي للمنتج المقبول
+    prompt = f"Write a short, high-converting social media ad caption for the product: '{data.title}'. Include key benefits and a call to action."
+    
+    response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": prompt}]
+    )
+    
+    ad_copy = response.choices[0].message.content
+
     return {
         "status": "success",
-        "message": f"Product '{data.title}' approved successfully! Marketing Agent initialized.",
-        "product": data.title
+        "product": data.title,
+        "marketing_copy": ad_copy
     }
