@@ -8,7 +8,6 @@ app = FastAPI()
 
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-# المنتجات المعروضة للمراجعة
 TRENDING_PRODUCTS = [
     {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
     {"title": "Ultrasonic Mini Air Humidifier", "budget": 25, "margin": 60},
@@ -17,9 +16,6 @@ TRENDING_PRODUCTS = [
     {"title": "Automatic Pet Water Fountain Filter", "budget": 40, "margin": 52},
     {"title": "Portable Neck Cooling Fan", "budget": 28, "margin": 58}
 ]
-
-# كتالوج المتجر الحي (المنتجات المقبولة الجاهزة للبيع)
-STOREFRONT_CATALOG = []
 
 class ApprovalRequest(BaseModel):
     title: str
@@ -34,30 +30,18 @@ def get_approvals():
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    # 1. توليد النص التسويقي عبر الذكاء الاصطناعي
-    prompt = f"Write a short, high-converting ad caption for: '{data.title}'. Highlight top benefits."
+    # وكيل الذكاء الاصطناعي يولد نص الإعلان وسعر البيع
+    prompt = f"Write a catchy 2-sentence sales copy for '{data.title}'."
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]
     )
     ad_copy = response.choices[0].message.content
 
-    # 2. إضافة المنتج تلقائياً إلى متجر البيع المباشر
-    product_entry = {
-        "id": len(STOREFRONT_CATALOG) + 1,
-        "title": data.title,
-        "price": 49.99,
-        "description": ad_copy
-    }
-    STOREFRONT_CATALOG.append(product_entry)
-
     return {
-        "status": "success",
-        "message": "Product added to Storefront Catalog",
-        "product": product_entry
+        "status": "approved",
+        "product": data.title,
+        "price": "$49.99",
+        "marketing_copy": ad_copy,
+        "checkout_url": f"https://buy.stripe.com/test_store?product={data.title.replace(' ', '_')}"
     }
-
-@app.get("/storefront_products")
-def get_storefront_products():
-    # جلب قائمة المنتجات المعروضة للبيع للعملاء
-    return STOREFRONT_CATALOG
