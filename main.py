@@ -60,7 +60,7 @@ def approve_product(data: ApprovalRequest):
                     'price_data': {
                         'currency': 'usd',
                         'product_data': {'name': data.title},
-                        'unit_amount': 4999,
+                        'unit_amount': int(round(next(p["budget"] * (1 + p["margin"] / 100) for p in TRENDING_PRODUCTS if p["title"] == data.title) * 100)),
                     },
                     'quantity': 1,
                 }],
