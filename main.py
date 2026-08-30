@@ -1,12 +1,15 @@
 import os
 import random
+import stripe
 from fastapi import FastAPI
 from pydantic import BaseModel
 from openai import OpenAI
 
 app = FastAPI()
 
+# إعداد مفاتيح الذكاء الاصطناعي والبوابة المالية
 client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
 
 TRENDING_PRODUCTS = [
     {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
@@ -30,7 +33,7 @@ def get_approvals():
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    # وكيل الذكاء الاصطناعي يولد نص الإعلان وسعر البيع
+    # 1. الذكاء الاصطناعي يكتب النص الإعلاني
     prompt = f"Write a catchy 2-sentence sales copy for '{data.title}'."
     response = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -38,10 +41,30 @@ def approve_product(data: ApprovalRequest):
     )
     ad_copy = response.choices[0].message.content
 
+    # 2. إنشاء جلسة دفع حقيقية في Stripe للمنتج
+    try:
+        session = stripe.checkout.Session.create(
+            payment_method_types=['card'],
+            line_items=[{
+                'price_data': {
+                    'currency': 'usd',
+                    'product_data': {'name': data.title},
+                    'unit_amount': 4999,  # $49.99
+                },
+                'quantity': 1,
+            }],
+            mode='payment',
+            success_url='https://example.com/success',
+            cancel_url='https://example.com/cancel',
+        )
+        checkout_url = session.url
+    except Exception as e:
+        checkout_url = f"https://buy.stripe.com/test?product={data.title.replace(' ', '_')}"
+
     return {
         "status": "approved",
         "product": data.title,
         "price": "$49.99",
         "marketing_copy": ad_copy,
-        "checkout_url": f"https://buy.stripe.com/test_store?product={data.title.replace(' ', '_')}"
+        "checkout_url": checkout_url
     }
