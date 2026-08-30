@@ -67,7 +67,7 @@ def cancel():
 
 @app.get("/get_approvals")
 def get_approvals():
-    return TRENDING_PRODUCTS
+    return random.choice(TRENDING_PRODUCTS)
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
