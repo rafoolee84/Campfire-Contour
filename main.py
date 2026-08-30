@@ -2,11 +2,19 @@ import os
 import random
 import stripe
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # جلب المفاتيح من متغيرات البيئة
 openai_api_key = os.environ.get("OPENAI_API_KEY")
@@ -59,7 +67,7 @@ def cancel():
 
 @app.get("/get_approvals")
 def get_approvals():
-    return random.choice(TRENDING_PRODUCTS)
+    return TRENDING_PRODUCTS
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
