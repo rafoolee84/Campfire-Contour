@@ -65,8 +65,8 @@ def approve_product(data: ApprovalRequest):
                     'quantity': 1,
                 }],
                 mode='payment',
-                success_url='https://example.com/success',
-                cancel_url='https://example.com/cancel',
+                success_url='https://smart-store-service.onrender.com/',
+                cancel_url='https://smart-store-service.onrender.com/',
             )
             checkout_url = session.url
         else:
