@@ -2,6 +2,7 @@ import os
 import random
 import stripe
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 from openai import OpenAI
 
@@ -27,9 +28,34 @@ TRENDING_PRODUCTS = [
 class ApprovalRequest(BaseModel):
     title: str
 
+def _page(title: str, message: str) -> str:
+    return f"""<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+</head>
+<body style="margin:0;font-family:sans-serif;background:#f6f3ff;color:#1f1633;">
+  <div style="background:#6b3fa0;color:#fff;padding:20px 24px;font-size:22px;">The Smart Store</div>
+  <div style="max-width:480px;margin:48px auto;background:#fff;padding:32px;border-radius:12px;">
+    <h1 style="margin-top:0;">{title}</h1>
+    <p style="font-size:18px;line-height:1.5;">{message}</p>
+  </div>
+</body>
+</html>"""
+
 @app.get("/")
 def home():
     return {"status": "Smart Store AI Engine Running"}
+
+@app.get("/success", response_class=HTMLResponse)
+def success():
+    return _page("Thank you", "Your payment went through. You can close this page.")
+
+@app.get("/cancel", response_class=HTMLResponse)
+def cancel():
+    return _page("Payment canceled", "No charge was made. You can close this page and try again.")
 
 @app.get("/get_approvals")
 def get_approvals():
@@ -65,8 +91,8 @@ def approve_product(data: ApprovalRequest):
                     'quantity': 1,
                 }],
                 mode='payment',
-                success_url='https://smart-store-service.onrender.com/',
-                cancel_url='https://smart-store-service.onrender.com/',
+                success_url='https://smart-store-service.onrender.com/success',
+                cancel_url='https://smart-store-service.onrender.com/cancel',
             )
             checkout_url = session.url
         else:
@@ -81,4 +107,3 @@ def approve_product(data: ApprovalRequest):
         "marketing_copy": ad_copy,
         "checkout_url": checkout_url
     }
-    
