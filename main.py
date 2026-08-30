@@ -81,3 +81,4 @@ def approve_product(data: ApprovalRequest):
         "marketing_copy": ad_copy,
         "checkout_url": checkout_url
     }
+    
