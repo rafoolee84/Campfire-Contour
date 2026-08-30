@@ -7,9 +7,13 @@ from openai import OpenAI
 
 app = FastAPI()
 
-# إعداد مفاتيح الذكاء الاصطناعي والبوابة المالية
-client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-stripe.api_key = os.environ.get("STRIPE_SECRET_KEY")
+# جلب المفاتيح من متغيرات البيئة
+openai_api_key = os.environ.get("OPENAI_API_KEY")
+stripe_secret_key = os.environ.get("STRIPE_SECRET_KEY")
+
+client = OpenAI(api_key=openai_api_key) if openai_api_key else None
+if stripe_secret_key:
+    stripe.api_key = stripe_secret_key
 
 TRENDING_PRODUCTS = [
     {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
@@ -33,33 +37,42 @@ def get_approvals():
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    # 1. الذكاء الاصطناعي يكتب النص الإعلاني
-    prompt = f"Write a catchy 2-sentence sales copy for '{data.title}'."
-    response = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[{"role": "user", "content": prompt}]
-    )
-    ad_copy = response.choices[0].message.content
-
-    # 2. إنشاء جلسة دفع حقيقية في Stripe للمنتج
+    # 1. توليد النص التسويقي
     try:
-        session = stripe.checkout.Session.create(
-            payment_method_types=['card'],
-            line_items=[{
-                'price_data': {
-                    'currency': 'usd',
-                    'product_data': {'name': data.title},
-                    'unit_amount': 4999,  # $49.99
-                },
-                'quantity': 1,
-            }],
-            mode='payment',
-            success_url='https://example.com/success',
-            cancel_url='https://example.com/cancel',
-        )
-        checkout_url = session.url
+        if client:
+            prompt = f"Write a 1-sentence catchy ad for '{data.title}'."
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            ad_copy = response.choices[0].message.content
+        else:
+            ad_copy = f"Buy {data.title} now at best price!"
     except Exception as e:
-        checkout_url = f"https://buy.stripe.com/test?product={data.title.replace(' ', '_')}"
+        ad_copy = f"Approved {data.title} successfully!"
+
+    # 2. إنشاء رابط الدفع في Stripe
+    try:
+        if stripe_secret_key:
+            session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'usd',
+                        'product_data': {'name': data.title},
+                        'unit_amount': 4999,
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url='https://example.com/success',
+                cancel_url='https://example.com/cancel',
+            )
+            checkout_url = session.url
+        else:
+            checkout_url = "https://stripe.com"
+    except Exception as e:
+        checkout_url = "https://stripe.com"
 
     return {
         "status": "approved",
