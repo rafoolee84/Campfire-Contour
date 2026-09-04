@@ -16,7 +16,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# جلب المفاتيح من متغيرات البيئة
 openai_api_key = os.environ.get("OPENAI_API_KEY")
 stripe_secret_key = os.environ.get("STRIPE_SECRET_KEY")
 
@@ -26,6 +25,8 @@ if stripe_secret_key:
 
 TRENDING_PRODUCTS = [
     {"title": "Northroom Ceramic Mug 11oz", "budget": 19.99, "margin": 0},
+    {"title": "Northroom Faux Suede Pillowcase", "budget": 29.99, "margin": 0},
+    {"title": "Northroom Matte Poster 7x5", "budget": 16.99, "margin": 0},
     {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
     {"title": "Ultrasonic Mini Air Humidifier", "budget": 25, "margin": 60},
     {"title": "Magnetic Wireless Power Bank 10k", "budget": 45, "margin": 50},
@@ -45,11 +46,12 @@ def _page(title: str, message: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{title}</title>
 </head>
-<body style="margin:0;font-family:sans-serif;background:#f6f3ff;color:#1f1633;">
-  <div style="background:#6b3fa0;color:#fff;padding:20px 24px;font-size:22px;">The Smart Store</div>
-  <div style="max-width:480px;margin:48px auto;background:#fff;padding:32px;border-radius:12px;">
+<body style="margin:0;font-family:Georgia,serif;background:#f6f1e9;color:#2b2b2b;">
+  <div style="padding:20px 24px;letter-spacing:0.2em;">NORTHROOM</div>
+  <div style="max-width:480px;margin:48px auto;background:#fffdf8;padding:32px;border-radius:12px;border:1px solid #e4dcd0;">
     <h1 style="margin-top:0;">{title}</h1>
     <p style="font-size:18px;line-height:1.5;">{message}</p>
+    <p><a href="https://northroom.onrender.com">Back to Northroom</a></p>
   </div>
 </body>
 </html>"""
@@ -60,7 +62,7 @@ def home():
 
 @app.get("/success", response_class=HTMLResponse)
 def success():
-    return _page("Thank you", "Your payment went through. You can close this page.")
+    return _page("Thank you", "Your payment went through. Print-on-demand will ship to the address you entered at checkout.")
 
 @app.get("/cancel", response_class=HTMLResponse)
 def cancel():
@@ -73,7 +75,6 @@ def get_approvals():
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    # 1. توليد النص التسويقي
     try:
         if client:
             prompt = f"Write a 1-sentence catchy ad for '{data.title}'."
@@ -84,10 +85,9 @@ def approve_product(data: ApprovalRequest):
             ad_copy = response.choices[0].message.content
         else:
             ad_copy = f"Buy {data.title} now at best price!"
-    except Exception as e:
+    except Exception:
         ad_copy = f"Approved {data.title} successfully!"
 
-    # 2. إنشاء رابط الدفع في Stripe
     try:
         if stripe_secret_key:
             match = next((p for p in TRENDING_PRODUCTS if p["title"] == data.title), None)
@@ -104,18 +104,19 @@ def approve_product(data: ApprovalRequest):
                 }],
                 mode='payment',
                 success_url='https://smart-store-service.onrender.com/success',
-                cancel_url='https://smart-store-service.onrender.com/cancel',
+                cancel_url='https://northroom.onrender.com',
             )
             checkout_url = session.url
         else:
             checkout_url = "https://stripe.com"
-    except Exception as e:
+    except Exception:
         checkout_url = "https://stripe.com"
 
+    price_label = f"${(unit_amount / 100):.2f}" if stripe_secret_key and 'unit_amount' in locals() else "$19.99"
     return {
         "status": "approved",
         "product": data.title,
-        "price": "$19.99",
+        "price": price_label,
         "marketing_copy": ad_copy,
         "checkout_url": checkout_url
     }
