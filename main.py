@@ -25,6 +25,7 @@ if stripe_secret_key:
     stripe.api_key = stripe_secret_key
 
 TRENDING_PRODUCTS = [
+    {"title": "Northroom Ceramic Mug 11oz", "budget": 19.99, "margin": 0},
     {"title": "Ergonomic Memory Foam Pillow", "budget": 35, "margin": 55},
     {"title": "Ultrasonic Mini Air Humidifier", "budget": 25, "margin": 60},
     {"title": "Magnetic Wireless Power Bank 10k", "budget": 45, "margin": 50},
@@ -67,7 +68,8 @@ def cancel():
 
 @app.get("/get_approvals")
 def get_approvals():
-    return random.choice(TRENDING_PRODUCTS)
+    mug = next((p for p in TRENDING_PRODUCTS if p["title"] == "Northroom Ceramic Mug 11oz"), None)
+    return mug if mug else random.choice(TRENDING_PRODUCTS)
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
@@ -88,13 +90,15 @@ def approve_product(data: ApprovalRequest):
     # 2. إنشاء رابط الدفع في Stripe
     try:
         if stripe_secret_key:
+            match = next((p for p in TRENDING_PRODUCTS if p["title"] == data.title), None)
+            unit_amount = int(round(match["budget"] * (1 + match["margin"] / 100) * 100)) if match else 1999
             session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
                     'price_data': {
                         'currency': 'usd',
                         'product_data': {'name': data.title},
-                        'unit_amount': int(round(next(p["budget"] * (1 + p["margin"] / 100) for p in TRENDING_PRODUCTS if p["title"] == data.title) * 100)),
+                        'unit_amount': unit_amount,
                     },
                     'quantity': 1,
                 }],
@@ -111,7 +115,7 @@ def approve_product(data: ApprovalRequest):
     return {
         "status": "approved",
         "product": data.title,
-        "price": "$49.99",
+        "price": "$19.99",
         "marketing_copy": ad_copy,
         "checkout_url": checkout_url
     }
