@@ -23,7 +23,7 @@ client = OpenAI(api_key=openai_api_key) if openai_api_key else None
 if stripe_secret_key:
     stripe.api_key = stripe_secret_key
 
-TRENDING_PRODUCTS = [
+TRENDING_PRODUCTS = TRENDING_PRODUCTS = [
     {"title": "Northroom Ceramic Mug 11oz", "budget": 17.99, "margin": 0},
     {"title": "Northroom Faux Suede Pillowcase", "budget": 26.99, "margin": 0},
     {"title": "Northroom Matte Poster 7x5", "budget": 15.99, "margin": 0},
@@ -45,7 +45,7 @@ TRENDING_PRODUCTS = [
     {"title": "Sheer Linen Curtain Panels (Pair)", "budget": 57, "margin": 0},
     {"title": "Woven Placemats (Set of 4)", "budget": 28, "margin": 0},
     {"title": "Linen Napkin Set (Set of 4)", "budget": 26, "margin": 0},
-    {"title": "Bouclé Lumbar Pillow Cover", "budget": 23, "margin": 0},
+    {"title": "Boucl\u00e9 Lumbar Pillow Cover", "budget": 23, "margin": 0},
     {"title": "Soft Knit Throw Blanket", "budget": 56, "margin": 0},
     {"title": "Quilted Cotton Coverlet", "budget": 93, "margin": 0},
     {"title": "Heavyweight Linen Pillowcases (Pair)", "budget": 33, "margin": 0},
@@ -89,7 +89,7 @@ TRENDING_PRODUCTS = [
     {"title": "Ceramic Incense Holder", "budget": 20, "margin": 0},
     {"title": "Reed Diffuser Set", "budget": 30, "margin": 0},
     {"title": "Travertine Tray", "budget": 36, "margin": 0},
-    {"title": "Brass Candle Snuffer", "budget": 17, "margin": 0},
+    {"title": "Brass Candle Snuffer", "budget": 22, "margin": 0},
     {"title": "Ceramic Bud Vase (Set of 3)", "budget": 28, "margin": 0},
     {"title": "Woven Wall Hanging", "budget": 45, "margin": 0},
     {"title": "Picture Ledge Shelf", "budget": 34, "margin": 0},
@@ -102,7 +102,7 @@ TRENDING_PRODUCTS = [
     {"title": "Matte Black Robe Hooks (Set of 2)", "budget": 23, "margin": 0},
     {"title": "Ceramic Tissue Box Cover", "budget": 30, "margin": 0},
     {"title": "Matte Ceramic Toothbrush Holder", "budget": 20, "margin": 0},
-    {"title": "Bathroom Tumbler", "budget": 17, "margin": 0},
+    {"title": "Bathroom Tumbler", "budget": 22, "margin": 0},
     {"title": "Wall-Mounted Soap Dish", "budget": 20, "margin": 0},
     {"title": "Bamboo Bath Caddy", "budget": 36, "margin": 0},
     {"title": "Matte Black Towel Bar", "budget": 30, "margin": 0},
@@ -114,7 +114,7 @@ TRENDING_PRODUCTS = [
     {"title": "Under-Sink Bin (Pair)", "budget": 34, "margin": 0},
     {"title": "Canvas Storage Cubes (Set of 2)", "budget": 30, "margin": 0},
     {"title": "Wall Hook Rack (Wood + Brass)", "budget": 38, "margin": 0},
-    {"title": "Ceramic Jewelry Dish", "budget": 18, "margin": 0},
+    {"title": "Ceramic Jewelry Dish", "budget": 22, "margin": 0},
     {"title": "Rattan Magazine Holder", "budget": 45, "margin": 0},
     {"title": "Lidded Bamboo Box", "budget": 28, "margin": 0},
     {"title": "Closet Shelf Dividers (Set of 4)", "budget": 23, "margin": 0},
@@ -138,7 +138,7 @@ TRENDING_PRODUCTS = [
     {"title": "Cotton Jars with Bamboo Lids (Set of 2)", "budget": 25, "margin": 0},
     {"title": "Freestanding Toilet Paper Stand", "budget": 34, "margin": 0},
     {"title": "Ceramic Toilet Brush Holder", "budget": 23, "margin": 0},
-    {"title": "Countertop Soap Dish", "budget": 16, "margin": 0},
+    {"title": "Countertop Soap Dish", "budget": 20, "margin": 0},
     {"title": "Ceramic Canisters with Wood Lids (Set of 3)", "budget": 43, "margin": 0},
     {"title": "Rattan Lidded Box", "budget": 31, "margin": 0},
     {"title": "Acacia Valet Tray", "budget": 25, "margin": 0},
