@@ -152,6 +152,7 @@ TRENDING_PRODUCTS = [
 class ApprovalRequest(BaseModel):
     title: str
 
+
 def _page(title: str, message: str) -> str:
     return f"""<!doctype html>
 <html>
@@ -170,37 +171,33 @@ def _page(title: str, message: str) -> str:
 </body>
 </html>"""
 
+
 @app.get("/")
 def home():
     return {"status": "Smart Store AI Engine Running"}
+
 
 @app.get("/success", response_class=HTMLResponse)
 def success():
     return _page("Thank you", "Your payment went through. Print-on-demand will ship to the address you entered at checkout.")
 
+
 @app.get("/cancel", response_class=HTMLResponse)
 def cancel():
     return _page("Payment canceled", "No charge was made. You can close this page and try again.")
+
 
 @app.get("/get_approvals")
 def get_approvals():
     mug = next((p for p in TRENDING_PRODUCTS if p["title"] == "Northroom Ceramic Mug 11oz"), None)
     return mug if mug else random.choice(TRENDING_PRODUCTS)
 
+
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    try:
-        if client:
-            prompt = f"Write a 1-sentence catchy ad for '{data.title}'."
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "user", "content": prompt}]
-            )
-            ad_copy = response.choices[0].message.content
-        else:
-            ad_copy = f"Buy {data.title} now at best price!"
-    except Exception:
-        ad_copy = f"Approved {data.title} successfully!"
+    marketing_copy = f"{data.title} — calm pieces for the home."
+    unit_amount = 1999
+    checkout_url = "https://stripe.com"
 
     try:
         if stripe_secret_key:
@@ -221,16 +218,14 @@ def approve_product(data: ApprovalRequest):
                 cancel_url='https://northroom.onrender.com',
             )
             checkout_url = session.url
-        else:
-            checkout_url = "https://stripe.com"
     except Exception:
         checkout_url = "https://stripe.com"
 
-    price_label = f"${(unit_amount / 100):.2f}" if stripe_secret_key and 'unit_amount' in locals() else "$19.99"
+    price_label = f"${(unit_amount / 100):.2f}"
     return {
         "status": "approved",
         "product": data.title,
         "price": price_label,
-        "marketing_copy": ad_copy,
+        "marketing_copy": marketing_copy,
         "checkout_url": checkout_url
     }
