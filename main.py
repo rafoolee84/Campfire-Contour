@@ -126,7 +126,27 @@ TRENDING_PRODUCTS = [
     {"title": "Weathered Wood Plant Stand", "budget": 56, "margin": 0},
     {"title": "Natural Coir Welcome Mat", "budget": 29, "margin": 0},
     {"title": "Stoneware Dinner Bowls (Set of 4)", "budget": 41, "margin": 0},
-    {"title": "Linen Duvet Sham (Pair)", "budget": 42, "margin": 0}
+    {"title": "Linen Duvet Sham (Pair)", "budget": 42, "margin": 0},
+    {"title": "Ceramic Spoon Rest", "budget": 18, "margin": 0},
+    {"title": "Granite Mortar and Pestle", "budget": 32, "margin": 0},
+    {"title": "Acacia Napkin Holder", "budget": 24, "margin": 0},
+    {"title": "Stoneware Ramekins (Set of 4)", "budget": 28, "margin": 0},
+    {"title": "Wood Pedestal Riser", "budget": 26, "margin": 0},
+    {"title": "Ceramic Wall Pocket Vase", "budget": 29, "margin": 0},
+    {"title": "Ceramic Centerpiece Bowl", "budget": 42, "margin": 0},
+    {"title": "Ikebana Pin Frog", "budget": 16, "margin": 0},
+    {"title": "Cotton Jars with Bamboo Lids (Set of 2)", "budget": 28, "margin": 0},
+    {"title": "Freestanding Toilet Paper Stand", "budget": 38, "margin": 0},
+    {"title": "Ceramic Toilet Brush Holder", "budget": 26, "margin": 0},
+    {"title": "Countertop Soap Dish", "budget": 18, "margin": 0},
+    {"title": "Ceramic Canisters with Wood Lids (Set of 3)", "budget": 48, "margin": 0},
+    {"title": "Rattan Lidded Box", "budget": 34, "margin": 0},
+    {"title": "Acacia Valet Tray", "budget": 28, "margin": 0},
+    {"title": "Bamboo Multi-Grid Box", "budget": 26, "margin": 0},
+    {"title": "Terracotta Pot Set (Set of 3)", "budget": 40, "margin": 0},
+    {"title": "Matte Watering Can", "budget": 32, "margin": 0},
+    {"title": "Ceramic Plant Saucers (Set of 3)", "budget": 22, "margin": 0},
+    {"title": "Weathered Outdoor Storage Basket", "budget": 44, "margin": 0}
 ]
 
 class ApprovalRequest(BaseModel):
