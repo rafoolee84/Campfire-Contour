@@ -45,7 +45,7 @@ TRENDING_PRODUCTS = [
     {"title": "Sheer Linen Curtain Panels (Pair)", "budget": 57, "margin": 0},
     {"title": "Woven Placemats (Set of 4)", "budget": 28, "margin": 0},
     {"title": "Linen Napkin Set (Set of 4)", "budget": 26, "margin": 0},
-    {"title": "Boucl\u00e9 Lumbar Pillow Cover", "budget": 23, "margin": 0},
+    {"title": "Bouclé Lumbar Pillow Cover", "budget": 23, "margin": 0},
     {"title": "Soft Knit Throw Blanket", "budget": 56, "margin": 0},
     {"title": "Quilted Cotton Coverlet", "budget": 93, "margin": 0},
     {"title": "Heavyweight Linen Pillowcases (Pair)", "budget": 33, "margin": 0},
@@ -195,7 +195,7 @@ def get_approvals():
 
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
-    marketing_copy = f"{data.title} \u2014 calm pieces for the home."
+    marketing_copy = f"{data.title} — calm pieces for the home."
     unit_amount = 1999
     checkout_url = "https://stripe.com"
 
