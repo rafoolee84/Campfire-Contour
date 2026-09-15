@@ -239,7 +239,7 @@ def approve_product(data: ApprovalRequest):
                 billing_address_collection="required",
                 shipping_address_collection={"allowed_countries": ["US"]},
                 phone_number_collection={"enabled": True},
-                success_url="https://www.northroomhome.com/product.html?title={CHECKOUT_SESSION_ID}&paid=1",
+                success_url="https://www.northroomhome.com/?paid=1",
                 cancel_url="https://www.northroomhome.com/",
                 metadata={"sku": data.sku or "", "title": data.title},
             )
