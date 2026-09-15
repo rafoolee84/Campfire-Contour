@@ -4,6 +4,7 @@ import stripe
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from typing import Optional
 from pydantic import BaseModel
 from openai import OpenAI
 
@@ -151,6 +152,9 @@ TRENDING_PRODUCTS = [
 
 class ApprovalRequest(BaseModel):
     title: str
+    price: Optional[float] = None
+    quantity: int = 1
+    sku: Optional[str] = None
 
 
 def _page(title: str, message: str) -> str:
@@ -166,7 +170,7 @@ def _page(title: str, message: str) -> str:
   <div style=\"max-width:480px;margin:48px auto;background:#fffdf8;padding:32px;border-radius:12px;border:1px solid #e4dcd0;\">
     <h1 style=\"margin-top:0;\">{title}</h1>
     <p style=\"font-size:18px;line-height:1.5;\">{message}</p>
-    <p><a href=\"https://northroom.onrender.com\">Back to Northroom</a></p>
+    <p><a href=\"https://www.northroomhome.com\">Back to Northroom</a></p>
   </div>
 </body>
 </html>"""
@@ -196,30 +200,68 @@ def get_approvals():
 @app.post("/approve_product")
 def approve_product(data: ApprovalRequest):
     marketing_copy = f"{data.title} — calm pieces for the home."
-    unit_amount = 1999
     checkout_url = "https://stripe.com"
+    qty = max(1, int(data.quantity or 1))
+
+    # Prefer client catalog price; fall back to TRENDING_PRODUCTS match only if needed.
+    if data.price is not None and float(data.price) > 0:
+        unit_amount = int(round(float(data.price) * 100))
+    else:
+        match = next((p for p in TRENDING_PRODUCTS if p["title"] == data.title), None)
+        if not match:
+            return {
+                "status": "error",
+                "product": data.title,
+                "price": None,
+                "marketing_copy": marketing_copy,
+                "checkout_url": None,
+                "error": "Missing price for product",
+            }
+        unit_amount = int(round(match["budget"] * (1 + match["margin"] / 100) * 100))
+
+    product_data = {"name": data.title}
+    if data.sku:
+        product_data["metadata"] = {"sku": data.sku}
 
     try:
         if stripe_secret_key:
-            match = next((p for p in TRENDING_PRODUCTS if p["title"] == data.title), None)
-            unit_amount = int(round(match["budget"] * (1 + match["margin"] / 100) * 100)) if match else 1999
             session = stripe.checkout.Session.create(
-                payment_method_types=['card'],
+                payment_method_types=["card"],
                 line_items=[{
-                    'price_data': {
-                        'currency': 'usd',
-                        'product_data': {'name': data.title},
-                        'unit_amount': unit_amount,
+                    "price_data": {
+                        "currency": "usd",
+                        "product_data": product_data,
+                        "unit_amount": unit_amount,
                     },
-                    'quantity': 1,
+                    "quantity": qty,
                 }],
-                mode='payment',
-                success_url='https://smart-store-service.onrender.com/success',
-                cancel_url='https://northroom.onrender.com',
+                mode="payment",
+                billing_address_collection="required",
+                shipping_address_collection={"allowed_countries": ["US"]},
+                phone_number_collection={"enabled": True},
+                success_url="https://www.northroomhome.com/product.html?title={CHECKOUT_SESSION_ID}&paid=1",
+                cancel_url="https://www.northroomhome.com/",
+                metadata={"sku": data.sku or "", "title": data.title},
             )
             checkout_url = session.url
-    except Exception:
-        checkout_url = "https://stripe.com"
+        else:
+            return {
+                "status": "error",
+                "product": data.title,
+                "price": f"${(unit_amount / 100):.2f}",
+                "marketing_copy": marketing_copy,
+                "checkout_url": None,
+                "error": "Stripe not configured",
+            }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "product": data.title,
+            "price": f"${(unit_amount / 100):.2f}",
+            "marketing_copy": marketing_copy,
+            "checkout_url": None,
+            "error": str(exc),
+        }
 
     price_label = f"${(unit_amount / 100):.2f}"
     return {
@@ -227,5 +269,7 @@ def approve_product(data: ApprovalRequest):
         "product": data.title,
         "price": price_label,
         "marketing_copy": marketing_copy,
-        "checkout_url": checkout_url
+        "checkout_url": checkout_url,
+        "sku": data.sku,
+        "quantity": qty,
     }
