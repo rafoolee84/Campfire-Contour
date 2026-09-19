@@ -236,6 +236,7 @@ def approve_product(data: ApprovalRequest):
                     "quantity": qty,
                 }],
                 mode="payment",
+                allow_promotion_codes=True,
                 billing_address_collection="required",
                 shipping_address_collection={"allowed_countries": ["US"]},
                 phone_number_collection={"enabled": True},
