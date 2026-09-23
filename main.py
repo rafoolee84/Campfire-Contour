@@ -4,7 +4,7 @@ import stripe
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from typing import Optional
+from typing import List, Optional
 from pydantic import BaseModel
 from openai import OpenAI
 
@@ -274,3 +274,91 @@ def approve_product(data: ApprovalRequest):
         "sku": data.sku,
         "quantity": qty,
     }
+
+
+class CartLine(BaseModel):
+    title: str
+    price: float
+    quantity: int = 1
+    sku: Optional[str] = None
+
+
+class CartRequest(BaseModel):
+    items: List[CartLine]
+
+
+@app.post("/approve_cart")
+def approve_cart(data: CartRequest):
+    """Multi-item Stripe Checkout for Northroom cart."""
+    if not data.items:
+        return {"status": "error", "checkout_url": None, "error": "Cart is empty"}
+
+    line_items = []
+    titles = []
+    skus = []
+    for line in data.items:
+        qty = max(1, int(line.quantity or 1))
+        price = float(line.price or 0)
+        if price <= 0:
+            return {
+                "status": "error",
+                "checkout_url": None,
+                "error": f"Missing price for {line.title}",
+            }
+        unit_amount = int(round(price * 100))
+        product_data = {"name": line.title}
+        if line.sku:
+            product_data["metadata"] = {"sku": line.sku}
+        line_items.append({
+            "price_data": {
+                "currency": "usd",
+                "product_data": product_data,
+                "unit_amount": unit_amount,
+            },
+            "quantity": qty,
+        })
+        titles.append(line.title)
+        skus.append(line.sku or "")
+
+    marketing_copy = f"{len(line_items)} item(s) — calm pieces for the home."
+    try:
+        if not stripe_secret_key:
+            return {
+                "status": "error",
+                "product": ", ".join(titles[:3]),
+                "marketing_copy": marketing_copy,
+                "checkout_url": None,
+                "error": "Stripe not configured",
+            }
+        session = stripe.checkout.Session.create(
+            payment_method_types=["card"],
+            line_items=line_items,
+            mode="payment",
+            allow_promotion_codes=True,
+            billing_address_collection="required",
+            shipping_address_collection={"allowed_countries": ["US"]},
+            phone_number_collection={"enabled": True},
+            success_url="https://www.northroomhome.com/?paid=1",
+            cancel_url="https://www.northroomhome.com/cart.html",
+            metadata={
+                "cart": "1",
+                "skus": ",".join(skus)[:450],
+                "titles": " | ".join(titles)[:450],
+            },
+        )
+        return {
+            "status": "approved",
+            "product": f"{len(line_items)} items",
+            "marketing_copy": marketing_copy,
+            "checkout_url": session.url,
+            "item_count": len(line_items),
+        }
+    except Exception as exc:
+        return {
+            "status": "error",
+            "product": ", ".join(titles[:3]),
+            "marketing_copy": marketing_copy,
+            "checkout_url": None,
+            "error": str(exc),
+        }
+
