@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-25T07:52:05.877Z",
+ "generated_at": "2026-09-25T16:54:46.437Z",
  "source": "https://www.northroomhome.com/products.js",
  "count": 160,
  "skus": {
@@ -225,8 +225,8 @@
   },
   "S-005": {
    "title": "Lidded seagrass cube — square weave",
-   "unit_amount": 3000,
-   "price_matched": false
+   "unit_amount": 3239,
+   "price_matched": true
   },
   "S-006": {
    "title": "Walnut catchall tray set — desk & entry",
@@ -440,13 +440,13 @@
   },
   "L-015": {
    "title": "Ribbed glass pendant — amber soft",
-   "unit_amount": 5200,
-   "price_matched": false
+   "unit_amount": 7199,
+   "price_matched": true
   },
   "L-016": {
    "title": "Cordless ceramic mushroom lamp — bisque",
-   "unit_amount": 4100,
-   "price_matched": false
+   "unit_amount": 5399,
+   "price_matched": true
   },
   "L-017": {
    "title": "Matte plaster wall sconce — half-dome pair",
