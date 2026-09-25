@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-25T16:54:46.437Z",
+ "generated_at": "2026-09-25T17:03:32.897Z",
  "source": "https://www.northroomhome.com/products.js",
- "count": 160,
+ "count": 159,
  "skus": {
   "T-001": {
    "title": "Washed cotton duvet cover set — khaki linen, twin",
@@ -225,8 +225,8 @@
   },
   "S-005": {
    "title": "Lidded seagrass cube — square weave",
-   "unit_amount": 3239,
-   "price_matched": true
+   "unit_amount": 3000,
+   "price_matched": false
   },
   "S-006": {
    "title": "Walnut catchall tray set — desk & entry",
@@ -276,11 +276,6 @@
   "S-025": {
    "title": "Felt-and-wood desk tray set — modular",
    "unit_amount": 2800,
-   "price_matched": false
-  },
-  "S-026": {
-   "title": "Woven water hyacinth laundry hamper — tall oat",
-   "unit_amount": 4800,
    "price_matched": false
   },
   "S-027": {
@@ -440,13 +435,13 @@
   },
   "L-015": {
    "title": "Ribbed glass pendant — amber soft",
-   "unit_amount": 7199,
-   "price_matched": true
+   "unit_amount": 5200,
+   "price_matched": false
   },
   "L-016": {
    "title": "Cordless ceramic mushroom lamp — bisque",
-   "unit_amount": 5399,
-   "price_matched": true
+   "unit_amount": 4100,
+   "price_matched": false
   },
   "L-017": {
    "title": "Matte plaster wall sconce — half-dome pair",
