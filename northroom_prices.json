@@ -1,7 +1,7 @@
 {
- "generated_at": "2026-09-25T17:03:32.897Z",
+ "generated_at": "2026-09-25T17:15:47.300Z",
  "source": "https://www.northroomhome.com/products.js",
- "count": 159,
+ "count": 157,
  "skus": {
   "T-001": {
    "title": "Washed cotton duvet cover set — khaki linen, twin",
@@ -628,19 +628,9 @@
    "unit_amount": 3000,
    "price_matched": false
   },
-  "O-010": {
-   "title": "Bamboo picnic flatware set — canvas roll",
-   "unit_amount": 2000,
-   "price_matched": false
-  },
   "O-011": {
    "title": "Soft-sided wine cooler tote — greige",
    "unit_amount": 2700,
-   "price_matched": false
-  },
-  "O-013": {
-   "title": "Hanging mesh food cover — natural dome",
-   "unit_amount": 2000,
    "price_matched": false
   },
   "O-014": {
