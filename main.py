@@ -1,3 +1,4 @@
+import json
 import os
 import random
 import stripe
@@ -150,6 +151,28 @@ TRENDING_PRODUCTS = [
     {"title": "Weathered Outdoor Storage Basket", "budget": 40, "margin": 0}
 ]
 
+# Server-side price table (generated from the live storefront by tools/gen_prices.js).
+# Client-sent prices are NEVER used; unknown / unpublished SKUs are rejected.
+_PRICES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "northroom_prices.json")
+with open(_PRICES_PATH, encoding="utf-8") as _fh:
+    _PRICE_TABLE = json.load(_fh)
+PRICES_BY_SKU = _PRICE_TABLE["skus"]
+_SKU_BY_TITLE = {v["title"]: k for k, v in PRICES_BY_SKU.items()}
+MAX_QTY_PER_LINE = 20
+
+
+def _catalog_lookup(sku: Optional[str], title: Optional[str]):
+    """Return (sku, entry) from the server price table, or (None, None)."""
+    key = (sku or "").strip()
+    if key in PRICES_BY_SKU:
+        return key, PRICES_BY_SKU[key]
+    for cand in (key, (title or "").strip()):
+        if cand in _SKU_BY_TITLE:
+            k = _SKU_BY_TITLE[cand]
+            return k, PRICES_BY_SKU[k]
+    return None, None
+
+
 class ApprovalRequest(BaseModel):
     title: str
     price: Optional[float] = None
@@ -203,21 +226,21 @@ def approve_product(data: ApprovalRequest):
     checkout_url = "https://stripe.com"
     qty = max(1, int(data.quantity or 1))
 
-    # Prefer client catalog price; fall back to TRENDING_PRODUCTS match only if needed.
-    if data.price is not None and float(data.price) > 0:
-        unit_amount = int(round(float(data.price) * 100))
-    else:
-        match = next((p for p in TRENDING_PRODUCTS if p["title"] == data.title), None)
-        if not match:
-            return {
-                "status": "error",
-                "product": data.title,
-                "price": None,
-                "marketing_copy": marketing_copy,
-                "checkout_url": None,
-                "error": "Missing price for product",
-            }
-        unit_amount = int(round(match["budget"] * (1 + match["margin"] / 100) * 100))
+    # Price always comes from the server-side table; client price is ignored.
+    sku, entry = _catalog_lookup(data.sku, data.title)
+    if not entry:
+        return {
+            "status": "error",
+            "product": data.title,
+            "price": None,
+            "marketing_copy": marketing_copy,
+            "checkout_url": None,
+            "error": "This item is no longer available.",
+        }
+    qty = min(qty, MAX_QTY_PER_LINE)
+    unit_amount = int(entry["unit_amount"])
+    data.title = entry["title"]
+    data.sku = sku
 
     product_data = {"name": data.title}
     if data.sku:
@@ -236,9 +259,10 @@ def approve_product(data: ApprovalRequest):
                     "quantity": qty,
                 }],
                 mode="payment",
-                allow_promotion_codes=True,
+                allow_promotion_codes=not (entry["price_matched"] or sku in PRICE_MATCHED_SKUS),
                 billing_address_collection="required",
                 shipping_address_collection={"allowed_countries": ["US"]},
+                shipping_options=_cart_shipping_options(unit_amount * qty),
                 phone_number_collection={"enabled": True},
                 success_url="https://www.northroomhome.com/?paid=1",
                 cancel_url="https://www.northroomhome.com/",
@@ -277,8 +301,8 @@ def approve_product(data: ApprovalRequest):
 
 
 class CartLine(BaseModel):
-    title: str
-    price: float
+    title: Optional[str] = None
+    price: Optional[float] = None  # ignored; server price table is authoritative
     quantity: int = 1
     sku: Optional[str] = None
     price_matched: bool = False
@@ -290,7 +314,7 @@ class CartLine(BaseModel):
 #   contains any price-matched line is created with promotion codes disabled.
 FREE_SHIP_MIN_CENTS = 5000
 STANDARD_SHIP_CENTS = 599
-PRICE_MATCHED_SKUS = {"T-008", "L-001"}
+PRICE_MATCHED_SKUS = {"T-008", "L-001"} | {k for k, v in PRICES_BY_SKU.items() if v.get("price_matched")}
 
 
 def _cart_shipping_options(subtotal_cents: int):
@@ -334,18 +358,18 @@ def approve_cart(data: CartRequest):
     skus = []
     subtotal_cents = 0
     has_price_matched = False
+    unknown = []
     for line in data.items:
-        qty = max(1, int(line.quantity or 1))
-        price = float(line.price or 0)
-        if price <= 0:
-            return {
-                "status": "error",
-                "checkout_url": None,
-                "error": f"Missing price for {line.title}",
-            }
-        unit_amount = int(round(price * 100))
+        sku, entry = _catalog_lookup(line.sku, line.title)
+        if not entry:
+            unknown.append(line.title or line.sku or "item")
+            continue
+        qty = min(MAX_QTY_PER_LINE, max(1, int(line.quantity or 1)))
+        unit_amount = int(entry["unit_amount"])
+        line.title = entry["title"]
+        line.sku = sku
         subtotal_cents += unit_amount * qty
-        if line.price_matched or (line.sku or "") in PRICE_MATCHED_SKUS:
+        if line.price_matched or entry.get("price_matched") or sku in PRICE_MATCHED_SKUS:
             has_price_matched = True
         product_data = {"name": line.title}
         if line.sku:
@@ -360,6 +384,13 @@ def approve_cart(data: CartRequest):
         })
         titles.append(line.title)
         skus.append(line.sku or "")
+    if unknown:
+        return {
+            "status": "error",
+            "checkout_url": None,
+            "error": "No longer available: " + ", ".join(unknown[:5]) + ". Remove it from your cart and try again.",
+            "unavailable": unknown,
+        }
 
     marketing_copy = f"{len(line_items)} item(s) — calm pieces for the home."
     try:
