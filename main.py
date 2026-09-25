@@ -259,7 +259,7 @@ def approve_product(data: ApprovalRequest):
                     "quantity": qty,
                 }],
                 mode="payment",
-                allow_promotion_codes=not (entry["price_matched"] or sku in PRICE_MATCHED_SKUS),
+                allow_promotion_codes=not entry.get("price_matched"),
                 billing_address_collection="required",
                 shipping_address_collection={"allowed_countries": ["US"]},
                 shipping_options=_cart_shipping_options(unit_amount * qty),
@@ -305,7 +305,7 @@ class CartLine(BaseModel):
     price: Optional[float] = None  # ignored; server price table is authoritative
     quantity: int = 1
     sku: Optional[str] = None
-    price_matched: bool = False
+    price_matched: bool = False  # ignored; promo eligibility comes from the server price table
 
 
 # Northroom checkout rules (keep in sync with northroomhome.com cart.html):
@@ -314,7 +314,7 @@ class CartLine(BaseModel):
 #   contains any price-matched line is created with promotion codes disabled.
 FREE_SHIP_MIN_CENTS = 5000
 STANDARD_SHIP_CENTS = 599
-PRICE_MATCHED_SKUS = {"T-008", "L-001"} | {k for k, v in PRICES_BY_SKU.items() if v.get("price_matched")}
+PRICE_MATCHED_SKUS = {k for k, v in PRICES_BY_SKU.items() if v.get("price_matched")}  # from server price table only
 
 
 def _cart_shipping_options(subtotal_cents: int):
@@ -369,7 +369,8 @@ def approve_cart(data: CartRequest):
         line.title = entry["title"]
         line.sku = sku
         subtotal_cents += unit_amount * qty
-        if line.price_matched or entry.get("price_matched") or sku in PRICE_MATCHED_SKUS:
+        # Server price table is authoritative; the client price_matched flag is ignored.
+        if entry.get("price_matched"):
             has_price_matched = True
         product_data = {"name": line.title}
         if line.sku:
