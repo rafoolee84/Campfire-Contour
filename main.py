@@ -281,6 +281,42 @@ class CartLine(BaseModel):
     price: float
     quantity: int = 1
     sku: Optional[str] = None
+    price_matched: bool = False
+
+
+# Northroom checkout rules (keep in sync with northroomhome.com cart.html):
+# - free US shipping when cart subtotal (before discounts) >= FREE_SHIP_MIN_CENTS
+# - promo codes (e.g. NORTH15) never stack on price-matched items; a cart that
+#   contains any price-matched line is created with promotion codes disabled.
+FREE_SHIP_MIN_CENTS = 5000
+STANDARD_SHIP_CENTS = 599
+PRICE_MATCHED_SKUS = {"T-008", "L-001"}
+
+
+def _cart_shipping_options(subtotal_cents: int):
+    if subtotal_cents >= FREE_SHIP_MIN_CENTS:
+        return [{
+            "shipping_rate_data": {
+                "type": "fixed_amount",
+                "fixed_amount": {"amount": 0, "currency": "usd"},
+                "display_name": "Free US shipping (orders $50+)",
+                "delivery_estimate": {
+                    "minimum": {"unit": "business_day", "value": 3},
+                    "maximum": {"unit": "business_day", "value": 15},
+                },
+            }
+        }]
+    return [{
+        "shipping_rate_data": {
+            "type": "fixed_amount",
+            "fixed_amount": {"amount": STANDARD_SHIP_CENTS, "currency": "usd"},
+            "display_name": "US standard (free on orders $50+)",
+            "delivery_estimate": {
+                "minimum": {"unit": "business_day", "value": 3},
+                "maximum": {"unit": "business_day", "value": 15},
+            },
+        }
+    }]
 
 
 class CartRequest(BaseModel):
@@ -296,6 +332,8 @@ def approve_cart(data: CartRequest):
     line_items = []
     titles = []
     skus = []
+    subtotal_cents = 0
+    has_price_matched = False
     for line in data.items:
         qty = max(1, int(line.quantity or 1))
         price = float(line.price or 0)
@@ -306,6 +344,9 @@ def approve_cart(data: CartRequest):
                 "error": f"Missing price for {line.title}",
             }
         unit_amount = int(round(price * 100))
+        subtotal_cents += unit_amount * qty
+        if line.price_matched or (line.sku or "") in PRICE_MATCHED_SKUS:
+            has_price_matched = True
         product_data = {"name": line.title}
         if line.sku:
             product_data["metadata"] = {"sku": line.sku}
@@ -334,14 +375,16 @@ def approve_cart(data: CartRequest):
             payment_method_types=["card"],
             line_items=line_items,
             mode="payment",
-            allow_promotion_codes=True,
+            allow_promotion_codes=not has_price_matched,
             billing_address_collection="required",
             shipping_address_collection={"allowed_countries": ["US"]},
+            shipping_options=_cart_shipping_options(subtotal_cents),
             phone_number_collection={"enabled": True},
             success_url="https://www.northroomhome.com/?paid=1",
             cancel_url="https://www.northroomhome.com/cart.html",
             metadata={
                 "cart": "1",
+                "price_matched": "1" if has_price_matched else "0",
                 "skus": ",".join(skus)[:450],
                 "titles": " | ".join(titles)[:450],
             },
@@ -352,6 +395,9 @@ def approve_cart(data: CartRequest):
             "marketing_copy": marketing_copy,
             "checkout_url": session.url,
             "item_count": len(line_items),
+            "subtotal": f"${subtotal_cents / 100:.2f}",
+            "shipping": "$0.00" if subtotal_cents >= FREE_SHIP_MIN_CENTS else f"${STANDARD_SHIP_CENTS / 100:.2f}",
+            "promotion_codes": not has_price_matched,
         }
     except Exception as exc:
         return {
